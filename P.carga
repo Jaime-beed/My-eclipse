@@ -1,0 +1,527 @@
+Sub Class_Globals
+
+	Private Root As B4XView 'ignore
+	Private xui As XUI 'ignore
+	Dim FondoUi As ImageView
+	Dim FondoUi2 As Label
+	Dim puntoss As Button
+	Dim buscar As Button
+	Dim btnGuardarFecha As Button
+	Dim Fondo As ImageView
+	Dim Ver_Pago_obj As Ver_Pago
+	Dim Pagos_obj As Pagos
+	Dim TxtBuscar As EditText
+	Dim Datos As ListView
+	Dim Mensaje As Panel
+	Dim Botonguardar As Button
+	Dim BtnExtra1 As Button
+	Dim BtnExtra2 As Button
+	Dim listaClientes As List   ' List of Map: each Map with keys: "cliente", "linea" (u otros)
+	Dim listaFiltrada As List
+	
+End Sub
+
+'You can add more parameters here.
+'========================
+' Initialize / Created
+'========================
+Public Sub Initialize As Object
+	
+	  ' <- inicializa ANTES de agregar
+	listaClientes.Initialize
+	listaFiltrada.Initialize
+	
+	
+	Return Me
+End Sub
+
+
+Private Sub B4XPage_Created (Root1 As B4XView)
+	Root = Root1
+	Root.LoadLayout("Guardar")
+
+	Ver_Pago_obj.Initialize
+	B4XPages.AddPage("Ver_Pago", Ver_Pago_obj)
+	
+	Pagos_obj.Initialize
+	B4XPages.AddPage("Pagos",Pagos_obj)
+
+	interui
+	Sleep(1000)
+	CrearUI
+	
+	CargarClientes
+	
+	
+End Sub
+
+
+
+
+
+Private Sub interui
+	
+	
+	Fondo.Initialize("Fondo")
+	Fondo.Bitmap = LoadBitmap(File.DirAssets, "Fondo App.png") ' Asegúrate de tener fondo.png en Files
+	Root.AddView(Fondo,-345dip, -400dip, 1080dip, 1929dip)
+	
+	
+	' Botón Volver (arriba)
+	'Dim btnVolver As Button
+	'btnVolver.Initialize("btnVolver")
+	'btnVolver.Text = "Volver"
+	'btnVolver.Color = Colors.RGB(255, 102, 0)
+	'btnVolver.TextColor = Colors.White
+	'Root.AddView(btnVolver, 10dip, 5dip, 70dip, 40dip)
+
+
+
+	' Fondo decorativo fijo
+	Dim gd As GradientDrawable
+	gd.Initialize("TOP_BOTTOM", Array As Int(Colors.RGB(255, 140, 0), Colors.RGB(255, 200, 0))) ' De naranja oscuro a claro
+	gd.CornerRadius = 0 ' Sin bordes redondeados
+	
+
+	FondoUi2.Initialize("FondoUi2")
+	FondoUi2.Background = gd
+	Root.AddView(FondoUi2, -10dip, 720dip, 1080dip, 70dip)
+
+	' Botón Guardar Fecha (encima del fondo)
+	
+	buscar .Initialize("buscar")
+	buscar .Text = ""
+	buscar .Color = Colors.Transparent 'sin color pq solo quier el click
+	'btnGuardarFecha.TextColor = Colors.Black
+	Root.AddView(buscar,  120dip, 720dip, 150dip, 70dip)
+	
+	puntoss .Initialize("puntoss")
+	puntoss .Text = ""
+	puntoss .Color = Colors.Transparent'sin color pq solo quier el click
+	'btnGuardarFecha.TextColor = Colors.Black
+	Root.AddView( puntoss,  270dip, 720dip, 120dip, 70dip)
+	
+	FondoUi.Initialize("FondoUi")
+	Root.AddView(FondoUi, -350dip, 720dip, 1080dip, 70dip)
+	FondoUi.Top = 720dip
+	FondoUi.Width = 1080dip
+	FondoUi.Height = 70dip
+	
+	MostrarImagenEnFondoUi
+End Sub
+
+'========================
+' UI de búsqueda exacta
+'========================
+Private Sub CrearUI
+	Dim margen As Int = 10dip
+	Dim altoBoton As Int = 50dip
+	Dim sep As Int = 8dip
+	Dim altoBarraInferior As Int = 70dip
+	' ...después de agregar Datos al Root:
+
+	' la barra de interui (FondoUi2) mide 70dip
+	Dim eclipse As Typeface
+	eclipse = Typeface.LoadFromAssets("Kind Daily.ttf")
+	
+	Dim eclipseparrafo As Typeface
+	eclipseparrafo = Typeface.LoadFromAssets("ZTOtez-Regular.ttf")
+	
+	Dim eclipseparrafocursiva As Typeface
+	eclipseparrafocursiva = Typeface.LoadFromAssets("ZTOtez-Italic.ttf")
+	
+	
+	
+	Dim gdGrisAlpha As GradientDrawable
+	gdGrisAlpha.Initialize("RIGHT_LEFT", Array As Int(Colors.ARGB(170, 80, 80, 80), Colors.ARGB(170, 220, 220, 220)))
+	gdGrisAlpha.CornerRadius = 0
+	' Buscar (arriba)
+	TxtBuscar.Initialize("TxtBuscar")
+	TxtBuscar.Hint = "Escribe la(s) fecha(s) a guardar"
+	TxtBuscar.TextColor = Colors.Black
+	TxtBuscar.Gravity=Gravity.CENTER
+	TxtBuscar.Background=gdGrisAlpha
+	TxtBuscar.Typeface=eclipseparrafocursiva
+	TxtBuscar.Color = Colors.RGB(245,245,245)
+	Root.AddView(TxtBuscar, margen, margen, 100%x - margen*2, 45dip)
+
+	' Panel para los 3 botones en columna (queda justo encima de la barra inferior)
+	Dim altoColumna As Int = 10dip + altoBoton + sep + altoBoton + sep + altoBoton + 10dip
+	Dim columnaTop As Int = 100%y - altoBarraInferior - altoColumna   ' sin tapar la barra inferior
+	Dim columnaWidth As Int = 180dip
+
+	Dim pnlCol As Panel
+	pnlCol.Initialize("")
+	pnlCol.Color = Colors.Transparent
+	Root.AddView(pnlCol, margen, columnaTop, columnaWidth, altoColumna)
+
+	Dim gd2 As GradientDrawable
+	gd2.Initialize("TOP_BOTTOM", Array As Int(Colors.RGB(255, 140, 0), Colors.RGB(255, 200, 0))) ' De naranja oscuro a claro
+	gd2.CornerRadius = 25 ' Sin bordes redondeados
+	
+	' Botones: uno debajo del otro
+	Botonguardar.Initialize("Botonguardar")
+	Botonguardar.Text = "Guardar fecha"
+	Botonguardar.Typeface=eclipseparrafo
+	Botonguardar.Textsize=18
+	Botonguardar.TextColor = Colors.Black
+	Botonguardar.Background=gd2
+	pnlCol.AddView(Botonguardar, 0, 10dip, pnlCol.Width, altoBoton)
+	
+	BtnExtra2.Initialize("BtnExtra2")
+	BtnExtra2.Text = "Pagar deuda"
+	BtnExtra2.Textsize=18
+	BtnExtra2.Typeface=eclipseparrafo
+	BtnExtra2.TextColor = Colors.Black
+	BtnExtra2.Background=gd2
+	pnlCol.AddView(BtnExtra2, 0, 10dip + (altoBoton + sep)*2, pnlCol.Width, altoBoton)
+	
+	
+	Dim gd3 As GradientDrawable
+	gd3.Initialize("TOP_BOTTOM", Array As Int(Colors.ARGB(245, 88, 0, 130), Colors.ARGB(245, 30, 0, 60))) ' De naranja oscuro a claro
+	gd3.CornerRadius = 25
+	
+
+	BtnExtra1.Initialize("BtnExtra1")
+	BtnExtra1.Text = "Recordar fecha"
+	BtnExtra1.Typeface=eclipseparrafo
+	BtnExtra1.Textsize=18
+	BtnExtra1.TextColor = Colors.White
+	BtnExtra1.Background=gd3
+	pnlCol.AddView(BtnExtra1, 0, 10dip + altoBoton + sep, pnlCol.Width, altoBoton)
+
+	
+
+	' ListView: gris semitransparente y más chico (deja hueco para la columna de botones)
+	Dim topLV As Int = TxtBuscar.Top + TxtBuscar.Height + margen
+	Dim leftLV As Int = margen
+	Dim widthLV As Int = 100%x - margen*2
+	Dim heightLV As Int = pnlCol.Top - margen - topLV
+
+	Datos.Initialize("Datos")
+	Datos.Color = Colors.ARGB(170, 128, 128, 128)  ' gris semitransparente
+	Root.AddView(Datos, leftLV, topLV, widthLV, heightLV)
+	Datos.Clear
+	Datos.Visible = False
+	
+	Mensaje.Initialize("Mensaje")
+	Mensaje.Color = Colors.ARGB(170, 128, 128, 128)  ' gris semitransparente
+	Root.AddView(Mensaje, leftLV, topLV, widthLV, heightLV)
+	Mensaje.Visible = True
+End Sub
+
+
+
+
+
+	
+' Lanza la descarga (úsalo donde quieras: Created/Appear/botón)
+' Lanza la descarga
+' Coincidencia EXACTA por nombre (ignora mayúsculas y espacios extremos)
+
+'========================
+' Cargar clientes (Firebase) + JobDone sin GetDefault
+'========================
+Sub CargarClientes
+	Dim job As HttpJob
+	job.Initialize("mostrar_clientes", Me)
+	job.Download("https://my-admin-f0d0f-default-rtdb.firebaseio.com/clientes.json")
+End Sub
+
+Private Sub JobDone(job As HttpJob)
+	If job.Success Then
+		Select job.JobName
+			Case "mostrar_clientes"
+				Datos.Clear
+				listaClientes.Clear
+				listaFiltrada.Clear
+
+				Dim body As String = job.GetString
+				If body = "null" Or body.Length = 0 Then
+					job.Release
+					Return
+				End If
+
+				Dim parser As JSONParser
+				parser.Initialize(body)
+				Dim rootMap As Map = parser.NextObject   ' <-- NO usar "Root" aquí
+
+				' Soporta /clientes.json directo o { "clientes": { ... } }
+				Dim clientes As Map
+				If rootMap.ContainsKey("clientes") Then
+					clientes = rootMap.Get("clientes")
+				Else
+					clientes = rootMap
+				End If
+
+				For Each idCliente As String In clientes.Keys
+					Dim mDatos As Map = clientes.Get(idCliente)   ' <-- NO usar "Datos" (choca con ListView)
+
+					Dim nombreCliente As String = mDatos.GetDefault("cliente", "-")
+					Dim cuenta        As String = mDatos.GetDefault("cuentas", "-")
+					Dim cantidad      As String = mDatos.GetDefault("cantidad_a_pagar", "0")
+					Dim pagado        As String = "" & mDatos.GetDefault("pagado", False)
+					Dim dia           As String = mDatos.GetDefault("dia_pago", "-")
+					Dim combo         As String = "" & mDatos.GetDefault("combo", False)
+					Dim puntos        As String = mDatos.GetDefault("puntos_acumulados", "0")
+					Dim notas         As String = mDatos.GetDefault("notas", "")
+
+					Dim linea As String = $"Cliente: ${nombreCliente}${CRLF}Cuenta: ${cuenta}${CRLF}Cantidad: $${cantidad}${CRLF}Pagado: ${pagado}${CRLF}Fecha: ${dia} ${CRLF}Combo: ${combo}${CRLF}Puntos: ${puntos}${CRLF}Notas: ${notas}"$
+					' Guarda en memoria; el ListView se llena con el filtro
+                   
+					Dim item As Map
+					item.Initialize
+					item.Put("id", idCliente)
+					item.Put("cliente", nombreCliente)
+					item.Put("linea", linea)
+					item.Put("raw", mDatos)       ' <-- NECESARIO para guardar campos
+					listaClientes.Add(item)
+
+				Next
+
+				' Aplica la búsqueda EXACTA con el texto actual
+				FiltrarParcial(TxtBuscar.Text)
+		End Select
+	Else
+		Log("Error: " & job.ErrorMessage)
+		xui.MsgboxAsync("Error: " & job.ErrorMessage, "HTTP")
+	End If
+	job.Release
+End Sub
+
+Private Sub AddUnique(L As List, v As String)
+	If v.Length = 0 Then Return
+	For Each x As String In L
+		If x.EqualsIgnoreCase(v) Then Return
+	Next
+	L.Add(v)
+End Sub
+
+
+'----------------- BOTONES (placeholders) -----------------
+'----------------- BOTONES (corregido) -----------------
+Private Sub Botonguardar_Click
+	If listaFiltrada.Size = 0 Then
+		ToastMessageShow("No hay resultados visibles para guardar.", True)
+		Return
+	End If
+
+	' ---- Acumular en un SOLO cliente (archivo único LocalStore) ----
+	Dim nombre As String = ""
+	Dim cuentasList As List : cuentasList.Initialize
+	Dim totalCantidad As Double = 0
+	Dim totalPuntos  As Int    = 0
+	
+	' Unificación de dia_pago (una sola línea)
+	Dim diaPagoUnico As String = ""
+	Dim yaTengoDia As Boolean = False
+
+	' Guardado en TXT por cada item (si lo deseas)
+	Dim guardadosTxt As Int = 0
+
+	For Each it As Map In listaFiltrada
+		If it.IsInitialized = False Then Continue
+		If it.ContainsKey("raw") = False Or it.Get("raw") = Null Then Continue
+
+		Dim reg As Map = it.Get("raw")
+		If reg.IsInitialized = False Then Continue
+
+		' 1) Nombre visible (primer no vacío)
+		If nombre.Length = 0 Then nombre = GetStr(reg, "cliente", "")
+
+		' 2) Cuentas: "a, b" -> únicas
+		Dim cuentasTxt As String = GetStr(reg, "cuentas", "")
+		If cuentasTxt.Length > 0 Then
+			Dim partes() As String = Regex.Split(",", cuentasTxt)
+			For Each c As String In partes
+				AddUnique(cuentasList, c.Trim)
+			Next
+		End If
+
+		' 3) Sumas
+		totalCantidad = totalCantidad + Str2Dbl(GetStr(reg, "cantidad_a_pagar", "0"))
+		totalPuntos  = totalPuntos  + Str2Int(GetStr(reg, "puntos_acumulados", "0"))
+
+		' 4) Unificar dia_pago en UNA sola línea
+		If yaTengoDia = False Then
+			Dim d0 As String = GetStr(reg, "dia_pago", "").Trim
+			If d0.Length = 0 Then
+				' Compatibilidad: intenta armarlo con "dia"+"mes"
+				Dim d As String = GetStr(reg, "dia", "").Trim
+				Dim m As String = GetStr(reg, "mes", "").Trim
+				If d.Length > 0 And m.Length > 0 Then d0 = d & " de " & m
+			End If
+			If d0.Length > 0 Then
+				diaPagoUnico = d0
+				yaTengoDia = True
+			End If
+		End If
+
+	
+	Next
+
+	' Si no hubo nombre, pon uno genérico (opcional)
+	If nombre.Length = 0 Then nombre = "cliente"
+
+	' ---- Persistir en LocalStore (archivo único) ----
+	Dim data As Map : data.Initialize
+	data.Put("nombre", nombre)            ' metadata
+	data.Put("cuentas", cuentasList)      ' List<String>
+	data.Put("cantidad", totalCantidad)   ' suma en cantidad_total
+	data.Put("puntos",  totalPuntos)      ' suma en puntos_total
+	' >>> clave: dia_pago como única línea <<<
+	If diaPagoUnico.Length > 0 Then data.Put("dia_pago", diaPagoUnico)
+
+	LocalStore.SaveOrMergeCustomer(data)
+
+	' ---- Feedback en el ListView ----
+	Datos.Clear
+	Datos.AddSingleLine($"Guardado correctamente"$)
+
+
+    ToastMessageShow("Cuenta(s) Guardada(s)", True)
+End Sub
+
+
+'----------------- Helpers -----------------
+Private Sub GetStr(m As Map, k As String, def As String) As String
+	If m.IsInitialized And m.ContainsKey(k) And m.Get(k) <> Null Then Return "" & m.Get(k)
+	Return def
+End Sub
+
+Private Sub Str2Dbl(s As String) As Double
+	s = ("" & s).Trim.Replace(",", ".")
+	Try
+		Return s
+	Catch
+		Return 0
+	End Try
+End Sub
+
+Private Sub Str2Int(s As String) As Int
+	Try
+		Return ("" & s).Trim
+	Catch
+		Return 0
+	End Try
+End Sub
+
+
+
+Private Sub BtnExtra1_Click
+
+End Sub
+
+
+
+Private Sub BtnExtra2_Click
+	B4XPages.ShowPageAndRemovePreviousPages("Pagos")
+End Sub
+
+
+Private Sub buscar_Click
+	B4XPages.ShowPageAndRemovePreviousPages("Ver_Pago")
+End Sub
+
+
+Private Sub puntoss_Click
+	B4XPages.ShowPageAndRemovePreviousPages("Puntos")
+End Sub
+
+
+Sub CargarImagenEscaladaDesdeWeb(url As String, iv As ImageView)
+	Dim j As HttpJob
+	j.Initialize("", Me)
+	j.Download(url)
+
+	Wait For (j) JobDone(j As HttpJob)
+	If j.Success Then
+		Dim bmpOriginal As Bitmap = j.GetBitmap
+		Dim ratioOriginal As Float = bmpOriginal.Width / bmpOriginal.Height
+		Dim contenedorAncho As Int = iv.Width
+		Dim contenedorAlto As Int = iv.Height
+		Dim ratioContenedor As Float = contenedorAncho / contenedorAlto
+
+		Dim anchoFinal, altoFinal As Int
+
+		If ratioOriginal > ratioContenedor Then
+			anchoFinal = contenedorAncho
+			altoFinal = contenedorAncho / ratioOriginal
+		Else
+			altoFinal = contenedorAlto
+			anchoFinal = contenedorAlto * ratioOriginal
+		End If
+
+		Dim bmpEscalado As Bitmap
+		bmpEscalado.InitializeMutable(contenedorAncho, contenedorAlto)
+		Dim cvs As Canvas
+		cvs.Initialize2(bmpEscalado)
+
+		Dim r As Rect
+		Dim offsetX As Int = (contenedorAncho - anchoFinal) / 2
+		Dim offsetY As Int = (contenedorAlto - altoFinal) / 2
+		r.Initialize(offsetX, offsetY, offsetX + anchoFinal, offsetY + altoFinal)
+
+		cvs.DrawBitmap(bmpOriginal, Null, r)
+		iv.Bitmap = bmpEscalado
+	Else
+		Log("Error al cargar imagen: " & j.ErrorMessage)
+	End If
+	j.Release
+End Sub
+
+
+Sub MostrarImagenEnFondoUi
+	
+	Dim url As String = "https://firebasestorage.googleapis.com/v0/b/my-eclipse-bb053.firebasestorage.app/o/Guardar.png?alt=media&token=0017d68f-ee92-4fde-a520-cf917a966b0e"
+	CargarImagenEscaladaDesdeWeb(url, FondoUi)
+End Sub
+
+
+'========================
+' Búsqueda exacta + eventos
+'========================
+Private Sub TxtBuscar_TextChanged (Old As String, New As String)
+	Dim q As String = New.Trim
+	If q.Length = 0 Then
+		Datos.Clear
+		Datos.Visible = False
+		Mensaje.Visible = True
+		listaFiltrada.Clear
+		Return
+	End If
+	Datos.Visible = True
+	Mensaje.Visible = False
+	FiltrarParcial(q)
+	
+	Dim clean As String = New.Replace(CRLF, "").Replace(Chr(10), "").Replace(Chr(13), "")
+	If clean <> New Then
+		TxtBuscar.Text = clean
+		TxtBuscar.SelectionStart = clean.Length
+		Return
+	End If
+End Sub
+
+
+Private Sub FiltrarParcial(filtro As String)
+	Dim q As String = filtro.Trim.ToLowerCase
+	Datos.Clear
+	listaFiltrada.Clear
+	If q.Length = 0 Then Return           ' <-- clave: no llena nada
+
+	For Each m As Map In listaClientes
+		Dim n As String = ""
+		If m.ContainsKey("cliente") And m.Get("cliente") <> Null Then n = "" & m.Get("cliente")
+		If n.ToLowerCase.Contains(q) Then
+			Datos.AddSingleLine(m.Get("linea"))
+			listaFiltrada.Add(m)
+		End If
+	Next
+End Sub
+
+' === Lee los puntos actuales del único cliente guardado en LocalStore ===
+
+
+' Convierte "dia"+"mes" (Español) → ticks a las 09:00 del año actual
+
+
